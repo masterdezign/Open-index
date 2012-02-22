@@ -1,0 +1,15 @@
+wnmaster@k183r90d:~$ wn be -over
+
+Overview of noun be
+
+The noun be has 1 sense (no senses from tagged texts)
+                                            
+1. beryllium, Be, glucinium, atomic number 4 -- (a light strong brittle grey toxic bivalent metallic element)
+
+Overview of verb be
+
+The verb be has 13 senses (first 11 from tagged texts)
+                                           
+1. (10742) be -- (have the quality of being; (copula, used with an adjective or a predicate noun); "John is rich"; "This is not a good answer")
+2. (3019) be -- (be identical to; be someone or something; "The president of the company is John Smith"; "This is my house")
+3. (901) be -- (occupy a certain position or area; be somewhere; "Where is my umbrella?" "The toolshed is in the back"; "What is behind this behavior?")

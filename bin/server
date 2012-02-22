@@ -1,0 +1,116 @@
+require 'socket'
+require 'thread'
+require 'singleton'
+require 'src/indexers/indexer'
+require "rubygems"
+require 'json'
+
+class Engine
+  include Singleton
+  include OpenIndex
+
+  def initialize
+    @ind = Indexer.new
+  end
+
+  def search query
+    return @ind.search query
+  end
+
+  def indexDir dirname
+    return @ind.indexDir dirname
+  end
+end
+
+def cmd_index_dir dirname
+  ind = Engine.instance
+  if dirname
+    puts "Trying to index dir #{dirname}"
+    begin
+      ind.indexDir dirname
+    rescue Exception => e
+      return "Cound not index dir #{dirname}: #{e}"
+    end
+  end
+  return "OK"
+end
+
+def cmd_query query
+  ind = Engine.instance
+  return ind.search query
+end
+
+def execute line
+  cmd = JSON.parse line
+  if cmd["command"] == "index_dir"
+    return {:response => cmd_index_dir(cmd["param"])}
+  elsif cmd["command"] == "query"
+    return {:response => cmd_query(cmd["param"])}
+  end
+  return {:error => "Unknown command"}
+end
+
+
+class IndexServer
+  def initialize(host, port)
+    @server = TCPServer.new(host, port)
+    @semaphore = Mutex.new
+  end
+
+  def serve
+    while (socket = @server.accept)
+      client = ClientThread.new(socket)
+      client.on_received do | c, l |
+        process(c, l)
+      end
+      client.listen
+    end
+  end
+
+  def process(client, line)
+    puts Time.now, line
+    begin
+      resp = execute line
+    rescue JSON::ParserError
+      resp = {:error => "Invalid JSON"}
+    rescue Exception => e
+      resp = {:error => e}
+    end
+    client.send(resp.to_json)
+  end
+
+end
+
+class ClientThread
+  def initialize(socket)
+    @socket = socket
+    @on_received = nil
+  end
+
+  def listen
+    @listen_thread = Thread.new do
+      while line = @socket.gets
+        break if /^QUIT/ =~ line
+        @on_received.call(self, line) if @on_received
+      end
+      @socket.close
+    end
+  end
+
+  def send(line)
+    @socket.puts(line)
+  end
+
+  def on_received(&on_received)
+    @on_received = on_received
+  end
+
+end
+
+begin
+  host = ARGV[0] || 'localhost'
+  port = ARGV[1] || 23581
+
+  cs = IndexServer.new(host, port)
+  cs.serve
+end

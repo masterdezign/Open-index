@@ -1,0 +1,168 @@
+<dev at penkovsky at mail dot ua>
+
+=== ABOUT ===
+
+Project repository https://bitbucket.org/masterdezign/open-index
+
+Open index is intended to be used within small and middle-sized projects that
+need search capability.
+By now index works only with collections of .txt documents.
+
+Architecture remarks:
+While handlers implement primary storage and lookup routines,
+indexers provide generic indexing and search algorithms.
+
+               simple_handler    --<>               <-- simple_indexer
+RAM          / positional_handler--<>               <-- positional_indexer    indexing engine
+       <=> x    ...                   indexer_base        ...             <=>
+storage      \ bsbi_handler      --<>               <-- bsbi_indexer          search server
+                ...
+
+Wrappers are intended for wide indexers reuse with new features (provided
+by wrappers).
+
+=== REQUIREMENTS ===
+
+ruby1.8-dev
+rubygems
+gem json
+
+=== INSTALLATION ===
+
+Edit config/index.rb. There you can set INDEX_DIR where index files will
+be stored.
+
+=== TESTS ===
+
+Please find tests in test/ directory in order to get to know code faster
+and in details. Also you can find test/sample_texts/ which were used
+below.
+
+To run all tests simply type
+
+$ rake test
+
+=== SAMPLES ===
+
+** SERVER (Telnet session) **
+
+step 1
+
+$ ruby bin/server
+
+step 2
+
+$ telnet localhost 23581
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+{"command":"index_dir","param":"test/sample_texts"}
+SERVER: {"response":"OK"}
+{"command":"query","param":"to"}
+SERVER: {"response":["test/sample_texts/to_be_english.txt","test/sample_texts/to_be.txt","test/sample_texts/to_be_dist.txt"]}
+QUIT
+Connection closed by foreign host.
+
+** BSBI (Uses external storage. Supports up to 2^32 words and 2^32 documents) **
+
+$ ruby bsbi.rb test/sample_texts
+Parsing test/sample_texts/ruta1.txt
+Parsing test/sample_texts/ruta2.txt
+Parsing test/sample_texts/to_be_english.txt
+Parsing test/sample_texts/to_be.txt
+Parsing test/sample_texts/to_be_dist.txt
+Merging...
+Merge finished
+
+(look in INDEX_DIR for index)
+
+** Simple (Uses RAM) **
+
+$ ruby simple_normal.rb test/sample_texts
+Parsing test/sample_texts/ruta1.txt
+Parsing test/sample_texts/ruta2.txt
+Parsing test/sample_texts/to_be_english.txt
+Parsing test/sample_texts/to_be.txt
+Parsing test/sample_texts/to_be_dist.txt
+
+Results:
+To be or not To be:
+test/sample_texts/to_be_english.txt
+test/sample_texts/to_be.txt
+test/sample_texts/to_be_dist.txt
+
+Івасюк OR Івасюка Червона рута
+test/sample_texts/ruta1.txt
+test/sample_texts/ruta2.txt
+
+Івасюк OR Івасюка Червона рута NOT реклама
+test/sample_texts/ruta1.txt
+
+
+
+$ ruby gram_simple.rb test/sample_texts
+Parsing test/sample_texts/ruta1.txt
+Parsing test/sample_texts/ruta2.txt
+Parsing test/sample_texts/to_be_english.txt
+Parsing test/sample_texts/to_be.txt
+Parsing test/sample_texts/to_be_dist.txt
+like
+test/sample_texts/to_be.txt
+
+Now find documents containing words starting from li-
+li*
+test/sample_texts/to_be_english.txt
+test/sample_texts/to_be.txt
+
+Now find documents containing words starting from li- and containing "adjective"
+li* adjective
+test/sample_texts/to_be_english.txt
+
+Now find documents containing "be...lium"
+be*lium
+test/sample_texts/to_be_english.txt
+
+Now find documents containing "ad*ect*ve"
+ad*ect*ve
+test/sample_texts/to_be_english.txt
+
+
+
+$ ruby simple_two_word.rb test/sample_texts
+To be or not To be:
+test/sample_texts/to_be_english.txt
+test/sample_texts/to_be.txt
+test/sample_texts/to_be_dist.txt
+
+"To be or not To   be?"
+test/sample_texts/to_be.txt
+
+Івасюк OR Івасюка "Червона рута"
+test/sample_texts/івасюк.txt
+test/sample_texts/івасюк_2.txt
+
+Івасюк OR Івасюка "Червона рута" NOT реклама
+test/sample_texts/івасюк.txt
+
+
+
+$ ruby simple_positional.rb test/sample_texts
+To be or not To be:
+test/sample_texts/to_be_dist.txt
+test/sample_texts/to_be_english.txt
+test/sample_texts/to_be.txt
+
+To /1 be /1 or /1 not /1 To /1 be:
+test/sample_texts/to_be.txt
+
+To /10 be /5 or /5 not /5 To /5 be:
+test/sample_texts/to_be_dist.txt
+test/sample_texts/to_be.txt
+
+твір /5 рута
+test/sample_texts/івасюк.txt
+test/sample_texts/івасюк_2.txt
+
+твір /3 рута
+test/sample_texts/івасюк_2.txt
+
