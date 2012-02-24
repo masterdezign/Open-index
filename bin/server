@@ -1,7 +1,7 @@
 require 'socket'
 require 'thread'
 require 'singleton'
-require 'src/indexers/indexer'
+require 'lib/indexers/indexer'
 require "rubygems"
 require 'json'
 
